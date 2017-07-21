@@ -77,7 +77,8 @@ int main() {
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
     string sdata = string(data).substr(0, length);
-    cout << sdata << endl;
+		std::cout << "80 here!\n\n";
+    //cout << sdata << endl;
     if (sdata.size() > 2 && sdata[0] == '4' && sdata[1] == '2') {
       string s = hasData(sdata);
       if (s != "") {
@@ -91,26 +92,26 @@ int main() {
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
-
+					std::cout << "95 here!\n\n";
           for (int i = 0; i < ptsx.size(); i++)
 					{
+						
+						
 						double shift_x = ptsx[i] - px;
 						double shift_y = ptsy[i] - py;
 						
 						ptsx[i] = (shift_x * cos(0 - psi)-shift_y*sin(0-psi));
 						ptsy[i] = (shift_x * sin(0 - psi)+shift_y*cos(0-psi));
+					
+					
 					}
+					
 					
 					double* ptrx = &ptsx[0];
 					Eigen::Map<Eigen::VectorXd> ptsx_transform(ptrx, 6);  //converts vector double to VectorXd
-					
+					std::cout << "112 here!\n\n";
 					double* ptry = &ptsy[0];
 					Eigen::Map<Eigen::VectorXd> ptsy_transform(ptry, 6);
-					
-					
-					
-					
-					
 					
 					auto coeffs = polyfit(ptsx_transform, ptsy_transform, 3);
 					//calculate cte and epsilon
@@ -122,27 +123,27 @@ int main() {
 					double steer_value = j[1]["steering_angle"];
 					double throttle_value= j[1]["throttle"];
 					
-					
+					std::cout << "126 here!\n\n";
 					Eigen::VectorXd state(6);
 					state << 0, 0, 0, v, cte, epsi;
 										
+					std::cout << "130 here!\n\n";
 					
 					
 					
 					
 					
 					
-					
-					
-					
+										
 					auto vars = mpc.Solve(state, coeffs);
-					
+					std::cout << "139 here!\n\n";
 
-          //Display the waypoints/reference line
+					//Display the waypoints/reference line
 					vector<double> next_x_vals;
+					std::cout << "143 here!\n\n";
 					vector<double> next_y_vals;
 					
-					
+					std::cout << "145 here!\n\n";
 					double poly_inc = 2.5;  //
 					int num_points = 25;    //number of points visualized
 					for (int i = 1; i < num_points; i++)
@@ -155,7 +156,7 @@ int main() {
           //Display the MPC predicted trajectory 
 					vector<double> mpc_x_vals;
 					vector<double> mpc_y_vals;
-					
+					std::cout << "158 here!\n\n";
 					for (int i = 2; i < vars.size(); i++)
 					{
 						if(i%2 == 0)
@@ -169,13 +170,18 @@ int main() {
 					}
 					
 					double Lf = 2.67;
-										
+										std::cout << "173 here!\n\n";
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
           msgJson["steering_angle"] = vars[0]/(deg2rad(25)*Lf);
-          msgJson["throttle"] = vars[1];
 					
+					//std::cout << "\n\n\n\n\n";
+					//std::cout << vars[1] ;
+					//std::cout << "\n\n\n\n\n";
+					msgJson["throttle"] = vars[1];
+					
+					std::cout << "183 here!\n\n";
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
