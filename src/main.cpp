@@ -91,7 +91,7 @@ int main() {
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
-
+					std::cout << "95 here!\n\n";
           for (int i = 0; i < ptsx.size(); i++)
 					{
 						
@@ -108,7 +108,7 @@ int main() {
 					
 					double* ptrx = &ptsx[0];
 					Eigen::Map<Eigen::VectorXd> ptsx_transform(ptrx, 6);  //converts vector double to VectorXd
-					
+					std::cout << "112 here!\n\n";
 					double* ptry = &ptsy[0];
 					Eigen::Map<Eigen::VectorXd> ptsy_transform(ptry, 6);
 					
@@ -132,13 +132,13 @@ int main() {
 					
 					
 					
-					
-					
-					
+										
 					auto vars = mpc.Solve(state, coeffs);
 					
-
-          //Display the waypoints/reference line
+					
+					//Display the waypoints/reference line
+					
+					
 					vector<double> next_x_vals;
 					vector<double> next_y_vals;
 					
@@ -167,31 +167,18 @@ int main() {
 							mpc_y_vals.push_back(vars[i]);
 						}
 					}
-					
 					double Lf = 2.67;
-										
-          json msgJson;
+					json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
           msgJson["steering_angle"] = vars[0]/(deg2rad(25)*Lf);
-					
-					std::cout << "\n\n\n\n\n";
-					std::cout << vars[1] ;
-					std::cout << "\n\n\n\n\n";
 					msgJson["throttle"] = vars[1];
-					
-					
-
-          //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
+					//.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
-
-          msgJson["next_x"] = next_x_vals;
+					msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
-
-					
 					msgJson["mpc_x"] = mpc_x_vals;
 					msgJson["mpc_y"] = mpc_y_vals;
-					
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
  //         std::cout << msg << std::endl;
           // Latency
