@@ -91,7 +91,7 @@ int main() {
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
-					std::cout << "95 here!\n\n";
+					
           for (int i = 0; i < ptsx.size(); i++)
 					{
 						
@@ -108,7 +108,7 @@ int main() {
 					
 					double* ptrx = &ptsx[0];
 					Eigen::Map<Eigen::VectorXd> ptsx_transform(ptrx, 6);  //converts vector double to VectorXd
-					std::cout << "112 here!\n\n";
+					
 					double* ptry = &ptsy[0];
 					Eigen::Map<Eigen::VectorXd> ptsy_transform(ptry, 6);
 					
@@ -190,7 +190,7 @@ int main() {
           //
           // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
           // SUBMITTING.
-   //       this_thread::sleep_for(chrono::milliseconds(100));
+          //this_thread::sleep_for(chrono::milliseconds(100));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       } else {

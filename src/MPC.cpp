@@ -6,8 +6,8 @@
 using CppAD::AD;
 
 // TODO: Set the timestep length and duration
-size_t N = 10;  //timestep
-double dt = .1;
+size_t N = 8;  //timestep
+double dt = .09;
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -23,7 +23,7 @@ const double Lf = 2.67;
 
 double ref_cte 		= 0;
 double ref_epsi 	= 0;					//error psi
-double ref_v 			= 100;				//we want it to be fast
+double ref_v 			= 60;				//we want it to be fast
 
 size_t x_start 		= 0;
 size_t y_start 		= x_start + N;
@@ -156,9 +156,17 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // SHOULD BE 0 besides initial state.
   Dvector vars(n_vars);
   for (unsigned int i = 0; i < n_vars; i++) {
-    vars[i] = 0;
+    vars[i] = 0.0;
   }
 
+	vars[x_start] = x;
+		vars[y_start] = y;
+		vars[psi_start] = psi;
+		vars[v_start] = v;
+		vars[cte_start] = cte;
+		vars[epsi_start] = epsi;
+	
+	
   Dvector vars_lowerbound(n_vars);
   Dvector vars_upperbound(n_vars);
   // TODO: Set lower and upper limits for variables.
