@@ -70,14 +70,15 @@ int main() {
 
   // MPC is initialized here!
   MPC mpc;
-
+	
   h.onMessage([&mpc](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
+		const double millisecondsLatency = 100;
+		const double Lf = 2.67;
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
     string sdata = string(data).substr(0, length);
-		std::cout << "80 here!\n\n";
     //cout << sdata << endl;
     if (sdata.size() > 2 && sdata[0] == '4' && sdata[1] == '2') {
       string s = hasData(sdata);
@@ -92,8 +93,20 @@ int main() {
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
-					std::cout << "95 here!\n\n";
-          for (int i = 0; i < ptsx.size(); i++)
+					double delta = j[1]["steering_angle"];
+					
+					std::cout << "X = " << px << "Y = " << py << endl;
+					
+					px = px + v*cos(psi)*millisecondsLatency*.001;
+					py = py + v*sin(psi)*millisecondsLatency*.001;
+					psi = psi - v*delta/Lf*.1;
+					//v = v + acceleration*latency;
+					
+					std::cout << "X = " << px << "Y = " << py << endl;
+					
+					
+					
+          for (unsigned int i = 0; i < ptsx.size(); i++)
 					{
 						
 						
@@ -109,7 +122,7 @@ int main() {
 					
 					double* ptrx = &ptsx[0];
 					Eigen::Map<Eigen::VectorXd> ptsx_transform(ptrx, 6);  //converts vector double to VectorXd
-					std::cout << "112 here!\n\n";
+					
 					double* ptry = &ptsy[0];
 					Eigen::Map<Eigen::VectorXd> ptsy_transform(ptry, 6);
 					
@@ -117,17 +130,18 @@ int main() {
 					//calculate cte and epsilon
 					double cte = polyeval(coeffs, 0);  //0 is for initialization?
 					//cte is just horizontal error in this case
-					//double epsi = psi - atan(coeffs[1] + 2*px*coeffs[2]+3*coeffs[3]*px*px)
-					double epsi = -atan(coeffs[1]);  //simplification that we can sometims use if px is zero
+					double epsi = psi - atan(coeffs[1] + 2*px*coeffs[2]+3*coeffs[3]*px*px);
+					//double epsi = -atan(coeffs[1]);  //simplification that we can sometims use if px is zero
 					
 					double steer_value = j[1]["steering_angle"];
 					double throttle_value= j[1]["throttle"];
 					
-					std::cout << "126 here!\n\n";
+					std::cout << "Steer:" << steer_value << "APP: " << throttle_value << endl;
+					
+					
 					Eigen::VectorXd state(6);
 					state << 0, 0, 0, v, cte, epsi;
 										
-					std::cout << "130 here!\n\n";
 					
 					
 					
@@ -136,14 +150,15 @@ int main() {
 					
 										
 					auto vars = mpc.Solve(state, coeffs);
-					std::cout << "139 here!\n\n";
-
+					
+					
 					//Display the waypoints/reference line
+					
+					
 					vector<double> next_x_vals;
-					std::cout << "143 here!\n\n";
 					vector<double> next_y_vals;
 					
-					std::cout << "145 here!\n\n";
+					
 					double poly_inc = 2.5;  //
 					int num_points = 25;    //number of points visualized
 					for (int i = 1; i < num_points; i++)
@@ -156,8 +171,8 @@ int main() {
           //Display the MPC predicted trajectory 
 					vector<double> mpc_x_vals;
 					vector<double> mpc_y_vals;
-					std::cout << "158 here!\n\n";
-					for (int i = 2; i < vars.size(); i++)
+					
+					for (unsigned int i = 2; i < vars.size(); i++)
 					{
 						if(i%2 == 0)
 						{
@@ -168,31 +183,18 @@ int main() {
 							mpc_y_vals.push_back(vars[i]);
 						}
 					}
-					
 					double Lf = 2.67;
-										std::cout << "173 here!\n\n";
-          json msgJson;
+					json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
           msgJson["steering_angle"] = vars[0]/(deg2rad(25)*Lf);
-					
-					//std::cout << "\n\n\n\n\n";
-					//std::cout << vars[1] ;
-					//std::cout << "\n\n\n\n\n";
 					msgJson["throttle"] = vars[1];
-					
-					std::cout << "183 here!\n\n";
-
-          //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
+					//.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
-
-          msgJson["next_x"] = next_x_vals;
+					msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
-
-					
 					msgJson["mpc_x"] = mpc_x_vals;
 					msgJson["mpc_y"] = mpc_y_vals;
-					
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
  //         std::cout << msg << std::endl;
           // Latency
@@ -204,7 +206,7 @@ int main() {
           //
           // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
           // SUBMITTING.
-   //       this_thread::sleep_for(chrono::milliseconds(100));
+          this_thread::sleep_for(chrono::milliseconds(100));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       } else {

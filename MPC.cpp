@@ -6,7 +6,7 @@
 using CppAD::AD;
 
 // TODO: Set the timestep length and duration
-size_t N = 10;  //timestep
+size_t N = 11;  //timestep
 double dt = .1;
 
 // This value assumes the model presented in the classroom is used.
@@ -23,7 +23,7 @@ const double Lf = 2.67;
 
 double ref_cte 		= 0;
 double ref_epsi 	= 0;					//error psi
-double ref_v 			= 100;				//we want it to be fast
+double ref_v 			= 80;				//we want it to be fast
 
 size_t x_start 		= 0;
 size_t y_start 		= x_start + N;
@@ -53,28 +53,19 @@ class FG_eval {
 	
 //update the cost function... per classroom ?
 	for ( unsigned int i = 0; i < N; i++) {
-		fg[0] += 2000*CppAD::pow(vars[cte_start + i] - ref_cte, 2); //class code omits ref
+		fg[0] += 1000*CppAD::pow(vars[cte_start + i] - ref_cte, 2); //class code omits ref
 		fg[0] += 2000*CppAD::pow(vars[epsi_start+ i] - ref_epsi,2); //class code omits ref
 		fg[0] += CppAD::pow(vars[v_start + i] - ref_v, 2);
 	}
 	
 	for (unsigned int i = 0; i < N-1; i++) {
-		fg[0] += 5*CppAD::pow(vars[delta_start + i], 2);  //class code has +1?
-		fg[0] += 5*CppAD::pow(vars[a_start+ i],2);				//class code has +1?
+		fg[0] += 100*CppAD::pow(vars[delta_start + i], 2);  //class code has +1?
+		fg[0] += 100*CppAD::pow(vars[a_start+ i],2);				//class code has +1?
 	}
 	for (unsigned int i = 0; i < N-2; i++) {
 		fg[0] += 200*CppAD::pow(vars[delta_start+i+1] - vars[delta_start+i],2);
 		fg[0] += 10*CppAD::pow(vars[a_start + i + 1] - vars[a_start + i],2);
 	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
 	
 	
 	
@@ -115,10 +106,10 @@ class FG_eval {
 	
 		fg[2 + x_start + i] = x1 - (x0 + v0 * CppAD::cos(psi0) * dt);
 		fg[2 + y_start + i] = y1 - (y0 + v0 * CppAD::sin(psi0) * dt);
-		fg[2 + psi_start + i] = psi1 - (psi0 + v0 * delta0 / Lf * dt);  //-v0????  class code is +v0
+		fg[2 + psi_start + i] = psi1 - (psi0 - v0 * delta0 / Lf * dt);  //-v0????  class code is +v0
 		fg[2 + v_start + i] = v1 - (v0 + a0 *dt);
 		fg[2 + cte_start + i ] = cte1 - ((f0 -y0)+(v0* CppAD::sin(epsi0)*dt));
-		fg[2 + epsi_start + i ] = epsi1- ((psi0 - psides0) + v0 * delta0 / Lf * dt);  //-v0?  clas code is +v0
+		fg[2 + epsi_start + i ] = epsi1- ((psi0 - psides0) - v0 * delta0 / Lf * dt);  //-v0?  clas code is +v0
 	}
 	}
 };
@@ -132,7 +123,7 @@ MPC::~MPC() {}
 
 vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   bool ok = true;
-  size_t i;
+ // size_t i;
   typedef CPPAD_TESTVECTOR(double) Dvector;
 	
 	double x = state[0];
@@ -156,9 +147,17 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // SHOULD BE 0 besides initial state.
   Dvector vars(n_vars);
   for (unsigned int i = 0; i < n_vars; i++) {
-    vars[i] = 0;
+    vars[i] = 0.0;
   }
 
+	vars[x_start] = x;
+	vars[y_start] = y;
+	vars[psi_start] = psi;
+	vars[v_start] = v;
+	vars[cte_start] = cte;
+	vars[epsi_start] = epsi;
+	
+	
   Dvector vars_lowerbound(n_vars);
   Dvector vars_upperbound(n_vars);
   // TODO: Set lower and upper limits for variables.
@@ -169,11 +168,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
     vars_upperbound[i] = 1.0e19;
   }
 	
-	
-	
-	
-	
-	
+	\
 		for (unsigned int i = delta_start; i < a_start; i++) {  //set angle
 		vars_lowerbound[i] = -0.436332*Lf;
 		vars_upperbound[i] = 0.436332*Lf;	
@@ -185,20 +180,14 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
 	}
 	
 	
-	
-	
-	
-	
-	
-	
-	
-	
 	Dvector constraints_lowerbound(n_constraints);
 	Dvector constraints_upperbound(n_constraints);
 	for (unsigned int i = 0; i < n_constraints; i++) {
 		constraints_lowerbound[i] = 0;
 		constraints_upperbound[i] = 0;
 	}
+	
+	
 	
 	constraints_lowerbound[x_start] = x;
 	constraints_lowerbound[y_start] = y;
@@ -218,7 +207,6 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   FG_eval fg_eval(coeffs);
 
   //
-  // NOTE: You don't have to worry about these options
   //
   // options for IPOPT solver
   std::string options;
@@ -248,7 +236,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
 
   // Cost
   auto cost = solution.obj_value;
-  //std::cout << "Cost " << cost << std::endl;
+  std::cout << "Cost " << cost << std::endl;
 
   // TODO: Return the first actuator values. The variables can be accessed with
   // `solution.x[i]`.
