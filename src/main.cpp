@@ -92,7 +92,7 @@ int main() {
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
 					
-          for (int i = 0; i < ptsx.size(); i++)
+          for (unsigned int i = 0; i < ptsx.size(); i++)
 					{
 						
 						
@@ -116,11 +116,13 @@ int main() {
 					//calculate cte and epsilon
 					double cte = polyeval(coeffs, 0);  //0 is for initialization?
 					//cte is just horizontal error in this case
-					//double epsi = psi - atan(coeffs[1] + 2*px*coeffs[2]+3*coeffs[3]*px*px)
-					double epsi = -atan(coeffs[1]);  //simplification that we can sometims use if px is zero
+					double epsi = psi - atan(coeffs[1] + 2*px*coeffs[2]+3*coeffs[3]*px*px);
+					//double epsi = -atan(coeffs[1]);  //simplification that we can sometims use if px is zero
 					
 					double steer_value = j[1]["steering_angle"];
 					double throttle_value= j[1]["throttle"];
+					
+					std::cout << "Steer:" << steer_value << "APP: " << throttle_value << endl;
 					
 					
 					Eigen::VectorXd state(6);
@@ -156,7 +158,7 @@ int main() {
 					vector<double> mpc_x_vals;
 					vector<double> mpc_y_vals;
 					
-					for (int i = 2; i < vars.size(); i++)
+					for (unsigned int i = 2; i < vars.size(); i++)
 					{
 						if(i%2 == 0)
 						{
@@ -190,7 +192,7 @@ int main() {
           //
           // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
           // SUBMITTING.
-          //this_thread::sleep_for(chrono::milliseconds(100));
+          this_thread::sleep_for(chrono::milliseconds(100));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       } else {
