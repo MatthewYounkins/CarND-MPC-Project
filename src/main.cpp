@@ -70,12 +70,15 @@ int main() {
 
   // MPC is initialized here!
   MPC mpc;
-
+	
   h.onMessage([&mpc](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
+		const double millisecondsLatency = 100;
+		const double Lf = 2.67;
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
+		// Plus 42 is the answer to everything
     string sdata = string(data).substr(0, length);
     //cout << sdata << endl;
     if (sdata.size() > 2 && sdata[0] == '4' && sdata[1] == '2') {
@@ -91,20 +94,27 @@ int main() {
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
+					double delta = j[1]["steering_angle"];
+					
+					std::cout << "PX = " << px << "PY = " << py << endl;
+					
+					px = px + v*cos(psi)*millisecondsLatency*.001;			//pushes forward to the point where we'll be with no latency
+					py = py + v*sin(psi)*millisecondsLatency*.001;			//ibid, for y`
+					psi = psi - v*delta/Lf*millisecondsLatency*.001;		//ibid, for psi
+					//v = v + acceleration*latency;											//we actually don't have an acceleration term.  We could calculate from the last timestep but it's fairly modest
+					
+					//std::cout << "X = " << .01*(std::floor(100*px)) << "; Y = " << py << endl;  //Shows X+Y when uncommented
+					
+					
 					
           for (unsigned int i = 0; i < ptsx.size(); i++)
 					{
-						
-						
 						double shift_x = ptsx[i] - px;
 						double shift_y = ptsy[i] - py;
 						
 						ptsx[i] = (shift_x * cos(0 - psi)-shift_y*sin(0-psi));
 						ptsy[i] = (shift_x * sin(0 - psi)+shift_y*cos(0-psi));
-					
-					
 					}
-					
 					
 					double* ptrx = &ptsx[0];
 					Eigen::Map<Eigen::VectorXd> ptsx_transform(ptrx, 6);  //converts vector double to VectorXd
@@ -120,30 +130,18 @@ int main() {
 					//double epsi = -atan(coeffs[1]);  //simplification that we can sometims use if px is zero
 					
 					double steer_value = j[1]["steering_angle"];
-					double throttle_value= j[1]["throttle"];
+					double throttle_value = j[1]["throttle"];
 					
-					std::cout << "Steer:" << steer_value << "APP: " << throttle_value << endl;
-					
-					
+					std::cout << "Steer:" << steer_value << ";  APP: " << throttle_value << endl;
+							
 					Eigen::VectorXd state(6);
 					state << 0, 0, 0, v, cte, epsi;
-										
-					
-					
-					
-					
-					
-					
-										
 					auto vars = mpc.Solve(state, coeffs);
 					
 					
 					//Display the waypoints/reference line
-					
-					
 					vector<double> next_x_vals;
 					vector<double> next_y_vals;
-					
 					
 					double poly_inc = 2.5;  //
 					int num_points = 25;    //number of points visualized
