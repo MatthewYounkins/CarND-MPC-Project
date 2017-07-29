@@ -8,6 +8,9 @@
 #include "Eigen-3.3/Eigen/QR"
 #include "MPC.h"
 #include "json.hpp"
+#include <fstream>
+
+
 
 // for convenience
 using json = nlohmann::json;
@@ -96,7 +99,12 @@ int main() {
           double v = j[1]["speed"];
 					double delta = j[1]["steering_angle"];
 					
-					std::cout << "PX = " << px << "PY = " << py << endl;
+					std::ofstream outfile;
+					outfile.open("test.txt", std::ios_base::app);
+					outfile << std::endl;
+					outfile << px << "\t";
+					outfile << py << "\t";
+					outfile << psi << "\t";
 					
 					px = px + v*cos(psi)*millisecondsLatency*.001;			//pushes forward to the point where we'll be with no latency
 					py = py + v*sin(psi)*millisecondsLatency*.001;			//ibid, for y`
@@ -104,10 +112,10 @@ int main() {
 					//v = v + acceleration*latency;											//we actually don't have an acceleration term.  We could calculate from the last timestep but it's fairly modest
 					
 					//std::cout << "X = " << .01*(std::floor(100*px)) << "; Y = " << py << endl;  //Shows X+Y when uncommented
+					outfile << px << "\t" << py << "\t"<< psi << "\t"	<< v << "\t" << delta << "\t";
+					//outfile << score << "\t";
 					
-					
-					
-          for (unsigned int i = 0; i < ptsx.size(); i++)
+					for (unsigned int i = 0; i < ptsx.size(); i++)
 					{
 						double shift_x = ptsx[i] - px;
 						double shift_y = ptsy[i] - py;
@@ -115,6 +123,9 @@ int main() {
 						ptsx[i] = (shift_x * cos(0 - psi)-shift_y*sin(0-psi));
 						ptsy[i] = (shift_x * sin(0 - psi)+shift_y*cos(0-psi));
 					}
+					
+					outfile << ptsx[0] << "\t" << ptsy[0] << "\t"<< ptsx[1] << "\t" << ptsy[1] << "\t";
+					
 					
 					double* ptrx = &ptsx[0];
 					Eigen::Map<Eigen::VectorXd> ptsx_transform(ptrx, 6);  //converts vector double to VectorXd
@@ -126,13 +137,18 @@ int main() {
 					//calculate cte and epsilon
 					double cte = polyeval(coeffs, 0);  //0 is for initialization?
 					//cte is just horizontal error in this case
-					double epsi = psi - atan(coeffs[1] + 2*px*coeffs[2]+3*coeffs[3]*px*px);
-					//double epsi = -atan(coeffs[1]);  //simplification that we can sometims use if px is zero
+					//double epsi = psi - atan(coeffs[1] + 2*px*coeffs[2]+3*coeffs[3]*px*px);
+					double epsi = -atan(coeffs[1]);  //simplification that we can  use if x is zero
+					
+					epsi = epsi + (v/Lf) * delta * millisecondsLatency*.001;
 					
 					double steer_value = j[1]["steering_angle"];
 					double throttle_value = j[1]["throttle"];
 					
-					std::cout << "Steer:" << steer_value << ";  APP: " << throttle_value << endl;
+					//std::cout << "Steer:" << steer_value << ";  APP: " << throttle_value << endl;
+					outfile << steer_value << "\t";
+					outfile << throttle_value << "\t";
+					
 							
 					Eigen::VectorXd state(6);
 					state << 0, 0, 0, v, cte, epsi;
